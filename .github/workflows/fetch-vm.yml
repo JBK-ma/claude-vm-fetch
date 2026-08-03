@@ -1,8 +1,5 @@
 name: Fetch Claude Cowork VM
-
-# 鎵嬪姩瑙﹀彂锛氫粨搴?Actions 椤?鈫?Run workflow
-# 浣滅敤锛氬湪 GitHub 鏈嶅姟鍣紙鍙闂?downloads.claude.ai锛変笅杞?Claude Desktop
-#       Cowork 娌欑 VM 闀滃儚锛屾牎楠屽悗涓婁紶涓?Release 璧勪骇锛屼緵琚鐜鍙栧洖銆?on:
+on:
   workflow_dispatch: {}
 
 jobs:
@@ -28,7 +25,7 @@ jobs:
         run: |
           sudo apt-get update -qq && sudo apt-get install -y -qq zstd
           cd vm
-          # 瀹樻柟 manifest 涓殑瑙ｅ帇鍚?sha256锛?.24012.9 win32-x64锛?          declare -A EXPECT=(
+          declare -A EXPECT=(
             [rootfs.vhdx.zst]="21237ca86d15885ed7dcbe1c66b8b3a464c914648b16300070b12b1e1212e451"
             [vmlinuz.zst]="1bb4bc3aa0c0c797a2ca6134d2b7034a196e05d4deea7bb20f064ee353781f3b"
             [initrd.zst]="20214efcd451b3b74dc53ed80218c6e616bb2a101cafb18bc2c9bc91e559926b"
@@ -67,5 +64,8 @@ jobs:
           tag_name: claude-vm-6d1538ba
           name: Claude Cowork VM bundle (6d1538ba)
           body: |
-            浠?downloads.claude.ai 瀹樻柟 CDN 鎶撳彇鐨?Cowork 娌欑 VM 闀滃儚锛坵in32-x64, bundle 6d1538ba锛夈€?            鐢ㄩ€旓細缁曡繃琚缃戠粶锛屼緵 Claude Desktop 娌欑鍚姩銆?            鏂囦欢涓哄畼鏂?.zst 鍘嬬缉鏍煎紡锛涜嫢涓?.part 鍒嗗潡闇€鍏堝悎骞躲€?          files: vm/*
+            Claude Desktop Cowork sandbox VM images (win32-x64, bundle 6d1538ba)
+            fetched from the official downloads.claude.ai CDN.
+            Files are official .zst format; .part files need merging.
+          files: vm/*
           fail_on_unmatched_files: false
