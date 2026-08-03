@@ -21,9 +21,8 @@ jobs:
             ls -la "vm/$f"
           done
 
-      - name: Verify checksums (decompressed sha256)
+      - name: Verify checksums (sha256 of .zst files, per app manifest)
         run: |
-          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
           cd vm
           declare -A EXPECT=(
             [rootfs.vhdx.zst]="21237ca86d15885ed7dcbe1c66b8b3a464c914648b16300070b12b1e1212e451"
@@ -32,12 +31,9 @@ jobs:
           )
           FAIL=0
           for f in "${!EXPECT[@]}"; do
-            plain="${f%.zst}"
-            zstd -d -f "$f" -o "$plain" || { echo "decompress FAIL $f"; FAIL=1; continue; }
-            got=$(sha256sum "$plain" | awk '{print $1}')
+            got=$(sha256sum "$f" | awk '{print $1}')
             if [ "$got" = "${EXPECT[$f]}" ]; then
               echo "OK  $f -> $got"
-              rm -f "$plain"
             else
               echo "MISMATCH $f: expected ${EXPECT[$f]} got $got"
               FAIL=1
@@ -66,6 +62,7 @@ jobs:
           body: |
             Claude Desktop Cowork sandbox VM images (win32-x64, bundle 6d1538ba)
             fetched from the official downloads.claude.ai CDN.
-            Files are official .zst format; .part files need merging.
+            Files are official .zst format; .part files need merging
+            (cat rootfs.vhdx.zst.part* > rootfs.vhdx.zst).
           files: vm/*
           fail_on_unmatched_files: false
