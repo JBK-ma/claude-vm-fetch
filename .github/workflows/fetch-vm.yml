@@ -1,0 +1,71 @@
+name: Fetch Claude Cowork VM
+
+# 鎵嬪姩瑙﹀彂锛氫粨搴?Actions 椤?鈫?Run workflow
+# 浣滅敤锛氬湪 GitHub 鏈嶅姟鍣紙鍙闂?downloads.claude.ai锛変笅杞?Claude Desktop
+#       Cowork 娌欑 VM 闀滃儚锛屾牎楠屽悗涓婁紶涓?Release 璧勪骇锛屼緵琚鐜鍙栧洖銆?on:
+  workflow_dispatch: {}
+
+jobs:
+  fetch-vm:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download VM bundle from official CDN
+        run: |
+          SHA="6d1538ba6fecc4e5c5583993c4b30bb1875f0f5a"
+          BASE="https://downloads.claude.ai/vms/linux/x64/$SHA"
+          mkdir -p vm
+          for f in rootfs.vhdx.zst vmlinuz.zst initrd.zst; do
+            echo "== Downloading $f =="
+            curl -sSL --retry 5 --retry-delay 3 -o "vm/$f" "$BASE/$f"
+            ls -la "vm/$f"
+          done
+
+      - name: Verify checksums (decompressed sha256)
+        run: |
+          sudo apt-get update -qq && sudo apt-get install -y -qq zstd
+          cd vm
+          # 瀹樻柟 manifest 涓殑瑙ｅ帇鍚?sha256锛?.24012.9 win32-x64锛?          declare -A EXPECT=(
+            [rootfs.vhdx.zst]="21237ca86d15885ed7dcbe1c66b8b3a464c914648b16300070b12b1e1212e451"
+            [vmlinuz.zst]="1bb4bc3aa0c0c797a2ca6134d2b7034a196e05d4deea7bb20f064ee353781f3b"
+            [initrd.zst]="20214efcd451b3b74dc53ed80218c6e616bb2a101cafb18bc2c9bc91e559926b"
+          )
+          FAIL=0
+          for f in "${!EXPECT[@]}"; do
+            plain="${f%.zst}"
+            zstd -d -f "$f" -o "$plain" || { echo "decompress FAIL $f"; FAIL=1; continue; }
+            got=$(sha256sum "$plain" | awk '{print $1}')
+            if [ "$got" = "${EXPECT[$f]}" ]; then
+              echo "OK  $f -> $got"
+              rm -f "$plain"
+            else
+              echo "MISMATCH $f: expected ${EXPECT[$f]} got $got"
+              FAIL=1
+            fi
+          done
+          [ $FAIL -eq 0 ] || exit 1
+
+      - name: Split large files (release asset limit 2GB)
+        run: |
+          cd vm
+          for f in *.zst; do
+            size=$(stat -c%s "$f")
+            if [ "$size" -gt 1900000000 ]; then
+              echo "== Splitting $f ($size bytes) =="
+              split -b 1900000000 -d -a 2 "$f" "${f}.part"
+              rm -f "$f"
+            fi
+          done
+          ls -la
+
+      - name: Create Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: claude-vm-6d1538ba
+          name: Claude Cowork VM bundle (6d1538ba)
+          body: |
+            浠?downloads.claude.ai 瀹樻柟 CDN 鎶撳彇鐨?Cowork 娌欑 VM 闀滃儚锛坵in32-x64, bundle 6d1538ba锛夈€?            鐢ㄩ€旓細缁曡繃琚缃戠粶锛屼緵 Claude Desktop 娌欑鍚姩銆?            鏂囦欢涓哄畼鏂?.zst 鍘嬬缉鏍煎紡锛涜嫢涓?.part 鍒嗗潡闇€鍏堝悎骞躲€?          files: vm/*
+          fail_on_unmatched_files: false
