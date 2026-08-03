@@ -2,6 +2,9 @@ name: Fetch Claude Cowork VM
 on:
   workflow_dispatch: {}
 
+permissions:
+  contents: write
+
 jobs:
   fetch-vm:
     runs-on: ubuntu-latest
