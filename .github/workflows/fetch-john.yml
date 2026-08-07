@@ -1,0 +1,33 @@
+name: Fetch John the Ripper
+on:
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+
+jobs:
+  fetch-john:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download john jumbo win64 from openwall
+        run: |
+          mkdir -p dl
+          curl -sSL --retry 5 --retry-delay 3 -o "dl/john-1.9.0-jumbo-1-win64.zip" \
+            "https://www.openwall.com/john/k/john-1.9.0-jumbo-1-win64.zip"
+          ls -la dl/
+          sha256sum dl/john-1.9.0-jumbo-1-win64.zip
+
+      - name: Create Release and upload assets
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: john-jumbo-win64
+          name: John the Ripper jumbo 1.9.0 win64
+          body: |
+            John the Ripper jumbo 1.9.0 Windows x64 binary
+            fetched from openwall.com official site.
+          files: dl/*
+          fail_on_unmatched_files: false
