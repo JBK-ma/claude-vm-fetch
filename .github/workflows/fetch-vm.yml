@@ -15,7 +15,7 @@ jobs:
 
       - name: Download VM bundle from official CDN
         run: |
-          SHA="6d1538ba6fecc4e5c5583993c4b30bb1875f0f5a"
+          SHA="37817e321a4a5cfd1b8a667aa82bff9a55fb8f3b"
           BASE="https://downloads.claude.ai/vms/linux/x64/$SHA"
           mkdir -p vm
           for f in rootfs.vhdx.zst vmlinuz.zst initrd.zst; do
@@ -28,9 +28,9 @@ jobs:
         run: |
           cd vm
           declare -A EXPECT=(
-            [rootfs.vhdx.zst]="21237ca86d15885ed7dcbe1c66b8b3a464c914648b16300070b12b1e1212e451"
-            [vmlinuz.zst]="1bb4bc3aa0c0c797a2ca6134d2b7034a196e05d4deea7bb20f064ee353781f3b"
-            [initrd.zst]="20214efcd451b3b74dc53ed80218c6e616bb2a101cafb18bc2c9bc91e559926b"
+            [rootfs.vhdx.zst]="26227dd36dcafd0ba15cdf1e01cbb845446b9de22823eca3726457879ea7d0ee"
+            [vmlinuz.zst]="586266512091f17cb49552d0fb72603b310e1b851b0acd80f68ee855ddb31025"
+            [initrd.zst]="53455c9ccd4b5bcab137770a729a2ec121f64b5d9d34b521257e5512364865c3"
           )
           FAIL=0
           for f in "${!EXPECT[@]}"; do
@@ -44,28 +44,14 @@ jobs:
           done
           [ $FAIL -eq 0 ] || exit 1
 
-      - name: Split large files (release asset limit 2GB)
-        run: |
-          cd vm
-          for f in *.zst; do
-            size=$(stat -c%s "$f")
-            if [ "$size" -gt 1900000000 ]; then
-              echo "== Splitting $f ($size bytes) =="
-              split -b 1900000000 -d -a 2 "$f" "${f}.part"
-              rm -f "$f"
-            fi
-          done
-          ls -la
-
       - name: Create Release and upload assets
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: claude-vm-6d1538ba
-          name: Claude Cowork VM bundle (6d1538ba)
+          tag_name: claude-vm-37817e
+          name: Claude Cowork VM bundle (37817e)
           body: |
-            Claude Desktop Cowork sandbox VM images (win32-x64, bundle 6d1538ba)
+            Claude Desktop Cowork sandbox VM images (win32-x64, bundle 37817e)
             fetched from the official downloads.claude.ai CDN.
-            Files are official .zst format; .part files need merging
-            (cat rootfs.vhdx.zst.part* > rootfs.vhdx.zst).
+            Files are official .zst format.
           files: vm/*
           fail_on_unmatched_files: false
